@@ -3,6 +3,9 @@ const VerificationToken = require("../models/VerificationToken");
 const nodemailer = require("nodemailer");
 const { hash, compare } = require("bcryptjs");
 const { sign } = require("jsonwebtoken");
+const GenerateRefreshTokenProvider = require("../provider/GenerateRefreshTokenProvider");
+const GenerateTokenProvider = require("../provider/GenerateTokenProvider");
+const RefreshToken = require("../models/RefreshToken");
 
 module.exports = {
   async index(req, res) {
@@ -63,11 +66,18 @@ module.exports = {
     if (!passwordMatch)
       return res.status(401).send({ message: "Unauthorized user!" });
 
-    const token = sign({}, process.env.SECRET_KEY, {
-      subject: user["id"].toString(),
-      expiresIn: "20s",
+    const generateTokenProvider = new GenerateTokenProvider();
+    const token = await generateTokenProvider.execute(user["id"]);
+
+    await RefreshToken.destroy({
+      where: {
+        user_id: user["id"],
+      },
     });
 
-    return res.json({ token });
+    const generateRefreshTokenProvider = new GenerateRefreshTokenProvider();
+    const refreshToken = await generateRefreshTokenProvider.execute(user["id"]);
+
+    return res.json({ token, refreshToken });
   },
 };
