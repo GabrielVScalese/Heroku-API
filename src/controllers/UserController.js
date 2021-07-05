@@ -34,7 +34,7 @@ module.exports = {
       from: "From Test",
       to: email,
       subject: "Email Confirmation",
-      html: `Press <a href=http://localhost:5000/api/verifyUser/${token}> Here </a> to verify your email`,
+      html: `Press <a href=https://heroku-sequelize-api.herokuapp.com/api/verifyUser/${token}> Here </a> to verify your email`,
     };
 
     transport.sendMail(mailOptions);
