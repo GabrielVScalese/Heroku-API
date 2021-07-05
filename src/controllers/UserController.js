@@ -1,7 +1,8 @@
 const User = require("../models/User");
 const VerificationToken = require("../models/VerificationToken");
-const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const { hash, compare } = require("bcryptjs");
+const { sign } = require("jsonwebtoken");
 
 module.exports = {
   async index(req, res) {
@@ -11,18 +12,28 @@ module.exports = {
   },
 
   async store(req, res) {
-    const { name, email } = req.body;
+    const { name, email, password } = req.body;
+    const passwordHash = await hash(password, 8);
 
-    const user = await User.create({ name, email, verified: false });
+    const user = await User.create({
+      name,
+      email,
+      password: passwordHash,
+      verified: false,
+    });
 
     // Generate token
-    console.log(process.env.SECRET_KEY);
-    const token = jwt.sign({ id: user["id"] }, process.env.SECRET_KEY, {
-      expiresIn: 300,
+    const token = sign({}, process.env.SECRET_KEY, {
+      subject: user["id"].toString(),
+      expiresIn: "5m",
     });
-    await VerificationToken.create({ user_id: user["id"], token: token });
 
-    var transport = nodemailer.createTransport({
+    await VerificationToken.create({
+      user_id: user["id"],
+      token: token,
+    });
+
+    const transport = nodemailer.createTransport({
       service: "Gmail",
       auth: {
         user: process.env.USER,
@@ -30,7 +41,7 @@ module.exports = {
       },
     });
 
-    var mailOptions = {
+    const mailOptions = {
       from: "From Test",
       to: email,
       subject: "Email Confirmation",
@@ -40,5 +51,23 @@ module.exports = {
     transport.sendMail(mailOptions);
 
     return res.json(user);
+  },
+
+  async authenticate(req, res) {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ where: { email: email } });
+
+    const passwordMatch = await compare(password, user["password"]);
+
+    if (!passwordMatch)
+      return res.status(401).send({ message: "Unauthorized user!" });
+
+    const token = sign({}, process.env.SECRET_KEY, {
+      subject: user["id"].toString(),
+      expiresIn: "20s",
+    });
+
+    return res.json({ token });
   },
 };

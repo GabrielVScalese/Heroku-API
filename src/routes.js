@@ -11,6 +11,7 @@ routes.get("/", (req, res) => {
 // Users
 routes.get("/api/users", UserController.index);
 routes.post("/api/insertUser", UserController.store);
+routes.post("/api/authenticateUser", UserController.authenticate);
 
 // VerificationToken
 routes.get("/api/verifyUser/:token", VerificationTokenController.verification);
