@@ -1,7 +1,7 @@
 const express = require("express");
 const routes = require("./routes");
 
-require("./database"); // importat conexao, para permitir conexao do model com banco de dados
+require("./database"); // importar conexao, para permitir conexao do model com banco de dados
 
 require("dotenv").config();
 
