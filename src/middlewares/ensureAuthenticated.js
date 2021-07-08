@@ -10,8 +10,9 @@ module.exports = {
     const [, token] = authToken.split(" ");
 
     try {
-      verify(token, process.env.SECRET_KEY);
+      const decoded = verify(token, process.env.SECRET_KEY);
 
+      req.id = decoded["id"]; // Para uso posterior
       return next();
     } catch (error) {
       return res.status(401).send({ message: "Invalid token!" });
